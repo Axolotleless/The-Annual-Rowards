@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The 2026 Annual Rowards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --game-pink: #ff3b7c; 
+            --game-pink-hover: #e02a63;
+            --ui-bg: rgba(30, 30, 30, 0.5);
+            --ui-border: 4px solid #ffffff;
+            --ui-radius: 12px;
+            --text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
+        }
+        
+        body {
+            margin: 0; 
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(180deg, #6bb8ff 0%, #a2d2ff 40%, #e8f4ff 100%);
+            background-attachment: fixed;
+            display: flex; 
+            justify-content: center;
+            align-items: center; 
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 90%; 
+            max-width: 500px; 
+            background: var(--ui-bg);
+            border: var(--ui-border); 
+            border-radius: var(--ui-radius);
+            padding: 35px 25px; 
+            text-align: center;
+            color: white;
+            text-shadow: var(--text-shadow);
+            backdrop-filter: blur(4px);
+            box-sizing: border-box;
+        }
+        
+        h1 { 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            color: var(--game-pink); 
+            margin-top: 0;
+            margin-bottom: 5px; 
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+        }
+        
+        .progress { 
+            font-size: 1rem; 
+            color: #ffffff; 
+            margin-bottom: 25px; 
+            font-weight: 700;
+        }
+        
+        .category-title { 
+            font-size: 1.6rem; 
+            font-weight: 900; 
+            margin: 20px 0; 
+        }
+        
+        input {
+            width: 100%; 
+            padding: 18px; 
+            font-family: inherit; 
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.4); 
+            border: var(--ui-border);
+            border-radius: var(--ui-radius); 
+            color: white; 
+            outline: none; 
+            margin-bottom: 30px;
+            text-shadow: var(--text-shadow);
+            text-align: center;
+            box-sizing: border-box;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        input:focus { 
+            border-color: var(--game-pink); 
+            background: rgba(0, 0, 0, 0.6); 
+        }
+        
+        .buttons { 
+            display: flex; 
+            gap: 15px; 
+            justify-content: center;
+            width: 100%;
+        }
+        
+        button {
+            flex: 1; 
+            padding: 16px; 
+            font-family: inherit; 
+            font-size: 1.1rem;
+            font-weight: 900;
+            text-transform: uppercase; 
+            border-radius: var(--ui-radius); 
+            cursor: pointer; 
+            transition: all 0.15s ease;
+            text-shadow: var(--text-shadow);
+        }
+        
+        .btn-back { 
+            background: var(--ui-bg); 
+            border: var(--ui-border); 
+            color: white; 
+        }
+        
+        .btn-back:hover { 
+            background: rgba(0, 0, 0, 0.7); 
+            transform: scale(1.05);
+        }
+        
+        .btn-next { 
+            background: var(--game-pink); 
+            border: var(--ui-border); 
+            color: white; 
+        }
+        
+        .btn-next:hover { 
+            background: var(--game-pink-hover); 
+            transform: scale(1.05);
+        }
+        
+        .hidden { display: none !important; }
+        
+        #success-message { 
+            color: #72ff72; 
+            font-weight: 900; 
+            font-size: 1.3rem; 
+            margin-top: 20px;
+        }
+        
+        #error-message {
+            font-family: monospace !important; 
+            background: rgba(255, 0, 0, 0.2) !important;
+            color: white !important; 
+            border: var(--ui-border) !important; 
+            border-color: #ff4444 !important;
+            padding: 20px !important; 
+            text-align: left !important; 
+            font-size: 14px !important;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>The Rowards</h1>
+    <div class="progress" id="progress"></div>
+
+    <div id="wizard">
+        <div class="category-title" id="title"></div>
+        <input type="text" id="input" placeholder="Enter nomination...">
+        <div class="buttons">
+            <button class="btn-back" id="backBtn">Back</button>
+            <button class="btn-next" id="nextBtn">Next</button>
+        </div>
+    </div>
+
+    <div id="success-message" class="hidden">Nominations secured!<br><br>Thanks for taking the time to submit.</div>
+    <div id="error-message" class="hidden"></div>
+</div>
+
+<script>
+    const WORKER_URL = "https://awards-database.acc943132.workers.dev";
+
+    const cats = [
+        "Game of the Year", "Group of the Year", "Creator of the Year", "Best Sleeper Hit", 
+        "Best Classics", "Most Immersive Experience", "Most Fun Game", "Best Live Event", 
+        "Mobile Game of the Year", "Console Game of the Year", "Best Use of Tech", 
+        "Best Use of Audio", "Best New Game", "Best Showcase", "Best Game Trailer", 
+        "Roblox Video of the Year", "Best Video Content Creator", "Scott's Award of Excellence"
+    ];
+
+    let i = 0;
+    const noms = {};
+    
+    const els = {
+        title: document.getElementById("title"), 
+        input: document.getElementById("input"),
+        prog: document.getElementById("progress"), 
+        back: document.getElementById("backBtn"),
+        next: document.getElementById("nextBtn"), 
+        wiz: document.getElementById("wizard"),
+        succ: document.getElementById("success-message"), 
+        err: document.getElementById("error-message")
+    };
+
+    if (localStorage.getItem("rowards_nom")) {
+        triggerError("Local cache indicates prior submission. axowebservers block multi-casting.");
+    } else {
+        update();
+    }
+
+    els.back.onclick = () => { 
+        if (i > 0) { 
+            save(); 
+            i--; 
+            update(); 
+        } 
+    };
+    
+    els.next.onclick = () => { 
+        save(); 
+        if (i < cats.length - 1) {
+            i++;
+            update();
+        } else {
+            submit();
+        }
+    };
+
+    function update() {
+        els.title.textContent = cats[i];
+        els.prog.textContent = `Category ${i + 1} / ${cats.length}`;
+        els.input.value = noms[cats[i]] || "";
+        els.back.style.display = i === 0 ? "none" : "block";
+        els.next.textContent = i === cats.length - 1 ? "Submit" : "Next";
+        els.input.focus();
+    }
+
+    function save() {
+        const val = els.input.value.trim();
+        if (val) {
+            noms[cats[i]] = val; 
+        } else {
+            delete noms[cats[i]];
+        }
+    }
+
+    async function submit() {
+        els.next.disabled = true; 
+        els.next.textContent = "Working...";
+        
+        const payload = Object.keys(noms).map(k => ({ c: k, l: noms[k] }));
+
+        try {
+            const res = await fetch(WORKER_URL, { 
+                method: "POST", 
+                body: JSON.stringify(payload),
+                headers: { "Content-Type": "application/json" }
+            });
+            
+            if (res.ok) {
+                localStorage.setItem("rowards_nom", "1");
+                els.wiz.classList.add("hidden"); 
+                els.prog.classList.add("hidden");
+                els.succ.classList.remove("hidden");
+            } else {
+                const err = await res.json();
+                triggerError(err.error || "Remote axowebservers rejected payload without a fault code.");
+            }
+        } catch (e) {
+            triggerError("Network dropped. axowebservers unreachable. Check connection or adblocker restrictions.");
+        }
+        
+        els.next.disabled = false; 
+        els.next.textContent = "Submit";
+    }
+
+    function triggerError(detail) {
+        els.wiz.classList.add("hidden"); 
+        els.prog.classList.add("hidden");
+        els.err.classList.remove("hidden");
+        els.err.textContent = `[AXOWEBSERVERS - FATAL FAULT]\nStatus: Connection severed.\nDetails: ${detail}`;
+    }
+</script>
+</body>
+  </html>
+  
