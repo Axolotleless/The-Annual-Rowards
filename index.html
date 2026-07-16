@@ -11,22 +11,41 @@
         :root {
             --game-pink: #ff3b7c; 
             --game-pink-hover: #e02a63;
-            --ui-bg: rgba(30, 30, 30, 0.5);
+            --ui-bg: #f39c12;
             --ui-border: 4px solid #ffffff;
             --ui-radius: 12px;
-            --text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.6);
+            --text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
         }
         
         body {
             margin: 0; 
             padding: 0;
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(180deg, #6bb8ff 0%, #a2d2ff 40%, #e8f4ff 100%);
-            background-attachment: fixed;
+            background-color: #fdf3d0;
             display: flex; 
             justify-content: center;
             align-items: center; 
             min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            z-index: -1; 
+            
+            /* Uses a 40% opacity version of your UI orange for a perfect match */
+            background-color: rgba(243, 156, 18, 0.4); 
+            
+            -webkit-mask-image: url('background.png');
+            -webkit-mask-repeat: repeat;
+            -webkit-mask-size: 250px 250px;
+            mask-image: url('background.png');
+            mask-repeat: repeat;
+            mask-size: 250px 250px;
         }
         
         .container {
@@ -39,19 +58,19 @@
             text-align: center;
             color: white;
             text-shadow: var(--text-shadow);
-            backdrop-filter: blur(4px);
             box-sizing: border-box;
+            box-shadow: 0px 8px 15px rgba(0,0,0,0.1);
         }
         
         h1 { 
             font-weight: 900; 
             text-transform: uppercase; 
-            color: var(--game-pink); 
+            color: #ffffff; 
             margin-top: 0;
             margin-bottom: 5px; 
             font-size: 2.2rem;
             letter-spacing: 1px;
-            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+            text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.2);
         }
         
         .progress { 
@@ -67,30 +86,38 @@
             margin: 20px 0; 
         }
         
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
         input {
             width: 100%; 
-            padding: 18px; 
+            padding: 15px; 
             font-family: inherit; 
             font-size: 1.1rem;
             font-weight: 700;
-            background: rgba(0, 0, 0, 0.4); 
+            background: rgba(0, 0, 0, 0.2); 
             border: var(--ui-border);
             border-radius: var(--ui-radius); 
             color: white; 
             outline: none; 
-            margin-bottom: 30px;
             text-shadow: var(--text-shadow);
             text-align: center;
             box-sizing: border-box;
+            transition: all 0.2s ease;
         }
         
         input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
         }
         
         input:focus { 
-            border-color: var(--game-pink); 
-            background: rgba(0, 0, 0, 0.6); 
+            border-color: #ffffff; 
+            background: rgba(0, 0, 0, 0.4); 
+            transform: scale(1.02);
         }
         
         .buttons { 
@@ -112,15 +139,24 @@
             transition: all 0.15s ease;
             text-shadow: var(--text-shadow);
         }
+
+        button:disabled {
+            background: rgba(0, 0, 0, 0.3) !important;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: not-allowed;
+            transform: none !important;
+            text-shadow: none;
+            font-size: 0.95rem;
+        }
         
         .btn-back { 
-            background: var(--ui-bg); 
+            background: rgba(0,0,0,0.2); 
             border: var(--ui-border); 
             color: white; 
         }
         
-        .btn-back:hover { 
-            background: rgba(0, 0, 0, 0.7); 
+        .btn-back:hover:not(:disabled) { 
+            background: rgba(0, 0, 0, 0.4); 
             transform: scale(1.05);
         }
         
@@ -130,7 +166,7 @@
             color: white; 
         }
         
-        .btn-next:hover { 
+        .btn-next:hover:not(:disabled) { 
             background: var(--game-pink-hover); 
             transform: scale(1.05);
         }
@@ -138,7 +174,7 @@
         .hidden { display: none !important; }
         
         #success-message { 
-            color: #72ff72; 
+            color: #ffffff; 
             font-weight: 900; 
             font-size: 1.3rem; 
             margin-top: 20px;
@@ -156,6 +192,7 @@
             white-space: pre-wrap;
             word-wrap: break-word;
             margin-top: 20px;
+            text-shadow: none;
         }
     </style>
 </head>
@@ -167,7 +204,11 @@
 
     <div id="wizard">
         <div class="category-title" id="title"></div>
-        <input type="text" id="input" placeholder="Enter nomination...">
+        <div class="input-group">
+            <input type="text" id="input1" placeholder="1st Choice Nomination...">
+            <input type="text" id="input2" placeholder="2nd Choice Nomination...">
+            <input type="text" id="input3" placeholder="3rd Choice Nomination...">
+        </div>
         <div class="buttons">
             <button class="btn-back" id="backBtn">Back</button>
             <button class="btn-next" id="nextBtn">Next</button>
@@ -180,21 +221,112 @@
 
 <script>
     const WORKER_URL = "https://awards-database.acc943132.workers.dev";
+    
+    const START_DATE = new Date("2026-07-16T00:00:00Z").getTime(); 
+    const MS_PER_REVEAL = 3 * 24 * 60 * 60 * 1000;
+
+    const GEO_API_URL = "https://freeipapi.com/api/json/";
+
+    const TIME_API_CANDIDATES = [
+        {
+            name: "timeapi.io",
+            url: "https://timeapi.io/api/Time/current/zone?timeZone=Etc/UTC",
+            parse: (d) => new Date(d.dateTime + "Z").getTime()
+        },
+        {
+            name: "time.now",
+            url: "https://time.now/developer/api/timezone/UTC",
+            parse: (d) => new Date(d.utc_datetime || d.datetime).getTime()
+        }
+    ];
+    const FETCH_TIMEOUT_MS = 4000;
+    const MAX_CLOCK_DRIFT_MS = 5 * 60 * 1000;
+    let trustedOffset = 0;
+
+    function trustedNow() {
+        return Date.now() + trustedOffset;
+    }
+
+    async function fetchWithTimeout(url, ms) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ms);
+        try {
+            const res = await fetch(url, { signal: controller.signal });
+            return await res.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    async function detectLocation() {
+        try {
+            const data = await fetchWithTimeout(GEO_API_URL, FETCH_TIMEOUT_MS);
+            return {
+                country: data.countryName || null,
+                timezone: (data.timeZones && data.timeZones[0]) || null
+            };
+        } catch (e) {
+            return { country: null, timezone: null };
+        }
+    }
+
+    async function initTrustedTime() {
+        const location = await detectLocation();
+
+        for (const candidate of TIME_API_CANDIDATES) {
+            try {
+                const data = await fetchWithTimeout(candidate.url, FETCH_TIMEOUT_MS);
+                const serverTime = candidate.parse(data);
+                if (!serverTime || isNaN(serverTime)) continue;
+
+                const drift = serverTime - Date.now();
+
+                if (Math.abs(drift) > MAX_CLOCK_DRIFT_MS) {
+                    let whatItShouldBe = "";
+                    if (location.timezone) {
+                        try {
+                            const local = new Intl.DateTimeFormat("en-US", {
+                                timeZone: location.timezone,
+                                dateStyle: "medium",
+                                timeStyle: "medium"
+                            }).format(new Date(serverTime));
+                            whatItShouldBe = ` It should currently read about ${local}${location.country ? ` (${location.country} time)` : ""}.`;
+                        } catch (e) {}
+                    }
+
+                    triggerError(`Device date/time doesn't match the actual current time.\nDetected drift: ${Math.round(drift / 1000)}s.${whatItShouldBe}\n\nTurn your device's "set time automatically" option off then back on (or correct it manually) and reload this page.`);
+                    return false;
+                }
+
+                trustedOffset = drift;
+                return true;
+            } catch (e) {
+                continue;
+            }
+        }
+
+        trustedOffset = 0;
+        return true;
+    }
+
 
     const cats = [
         "Game of the Year", "Group of the Year", "Creator of the Year", "Best Sleeper Hit", 
         "Best Classics", "Most Immersive Experience", "Most Fun Game", "Best Live Event", 
         "Mobile Game of the Year", "Console Game of the Year", "Best Use of Tech", 
         "Best Use of Audio", "Best New Game", "Best Showcase", "Best Game Trailer", 
-        "Roblox Video of the Year", "Best Video Content Creator", "Scott's Award of Excellence"
+        "Roblox Video of the Year", "Best Video Content Creator"
     ];
 
     let i = 0;
-    const noms = {};
+    let noms = {};
+    let countdownTimer;
     
     const els = {
         title: document.getElementById("title"), 
-        input: document.getElementById("input"),
+        input1: document.getElementById("input1"),
+        input2: document.getElementById("input2"),
+        input3: document.getElementById("input3"),
         prog: document.getElementById("progress"), 
         back: document.getElementById("backBtn"),
         next: document.getElementById("nextBtn"), 
@@ -203,11 +335,19 @@
         err: document.getElementById("error-message")
     };
 
-    if (localStorage.getItem("rowards_nom")) {
-        triggerError("Local cache indicates prior submission. axowebservers block multi-casting.");
-    } else {
+    (async function init() {
+        if (localStorage.getItem("rowards_nom")) {
+            triggerError("Local cache indicates prior submission. axowebservers block multi-casting.");
+            return;
+        }
+
+        const clockOk = await initTrustedTime();
+        if (!clockOk) return;
+
+        const draft = localStorage.getItem("rowards_draft");
+        if (draft) noms = JSON.parse(draft);
         update();
-    }
+    })();
 
     els.back.onclick = () => { 
         if (i > 0) { 
@@ -227,22 +367,78 @@
         }
     };
 
+    function getUnlockedCount() {
+        const now = trustedNow();
+        if (now < START_DATE) return 1;
+        let count = Math.floor((now - START_DATE) / MS_PER_REVEAL) + 1;
+        return Math.min(count, cats.length);
+    }
+
+    function getNextUnlockTime() {
+        const unlocked = getUnlockedCount();
+        return START_DATE + (unlocked * MS_PER_REVEAL);
+    }
+
     function update() {
+        clearInterval(countdownTimer);
+        const unlockedCount = getUnlockedCount();
+
         els.title.textContent = cats[i];
         els.prog.textContent = `Category ${i + 1} / ${cats.length}`;
-        els.input.value = noms[cats[i]] || "";
+        
+        const currentNoms = noms[cats[i]] || ["", "", ""];
+        els.input1.value = currentNoms[0] || "";
+        els.input2.value = currentNoms[1] || "";
+        els.input3.value = currentNoms[2] || "";
+        
         els.back.style.display = i === 0 ? "none" : "block";
-        els.next.textContent = i === cats.length - 1 ? "Submit" : "Next";
-        els.input.focus();
+        
+        if (i < unlockedCount - 1) {
+            els.next.disabled = false;
+            els.next.textContent = "Next";
+        } else if (i === cats.length - 1 && unlockedCount === cats.length) {
+            els.next.disabled = false;
+            els.next.textContent = "Submit";
+        } else {
+            els.next.disabled = true;
+            tickCountdown();
+            countdownTimer = setInterval(tickCountdown, 1000);
+        }
+
+        els.input1.focus();
+    }
+
+    function tickCountdown() {
+        const now = trustedNow();
+        const nextUnlock = getNextUnlockTime();
+        const diff = nextUnlock - now;
+
+        if (diff <= 0) {
+            clearInterval(countdownTimer);
+            update();
+            return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+        els.next.textContent = `Unlocks in ${d}d ${h}h ${m}m ${s}s`;
     }
 
     function save() {
-        const val = els.input.value.trim();
-        if (val) {
-            noms[cats[i]] = val; 
+        const val1 = els.input1.value.trim();
+        const val2 = els.input2.value.trim();
+        const val3 = els.input3.value.trim();
+        
+        if (val1 || val2 || val3) {
+            noms[cats[i]] = [val1, val2, val3]; 
         } else {
             delete noms[cats[i]];
         }
+        
+        localStorage.setItem("rowards_draft", JSON.stringify(noms));
     }
 
     async function submit() {
@@ -260,6 +456,7 @@
             
             if (res.ok) {
                 localStorage.setItem("rowards_nom", "1");
+                localStorage.removeItem("rowards_draft");
                 els.wiz.classList.add("hidden"); 
                 els.prog.classList.add("hidden");
                 els.succ.classList.remove("hidden");
@@ -272,7 +469,7 @@
         }
         
         els.next.disabled = false; 
-        els.next.textContent = "Submit";
+        if(i === cats.length - 1) els.next.textContent = "Submit";
     }
 
     function triggerError(detail) {
@@ -283,5 +480,4 @@
     }
 </script>
 </body>
-  </html>
-  
+</html>
