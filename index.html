@@ -161,13 +161,14 @@
         }
         
         .btn-next { 
-            background: var(--game-pink); 
+            background: #ffffff; 
             border: var(--ui-border); 
-            color: white; 
+            color: var(--ui-bg); 
+            text-shadow: none; /* Removed shadow so the orange text is legible */
         }
         
         .btn-next:hover:not(:disabled) { 
-            background: var(--game-pink-hover); 
+            background: #f9f9f9; 
             transform: scale(1.05);
         }
         
@@ -240,7 +241,10 @@
         }
     ];
     const FETCH_TIMEOUT_MS = 4000;
-    const MAX_CLOCK_DRIFT_MS = 5 * 60 * 1000;
+    
+    // Increased to 15 minutes to allow for natural device clock drift 
+    const MAX_CLOCK_DRIFT_MS = 15 * 60 * 1000; 
+    
     let trustedOffset = 0;
 
     function trustedNow() {
